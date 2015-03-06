@@ -3,6 +3,8 @@ before_filter :signed_in_user, only: [:index, :edit, :update, :destroy]
 before_filter :correct_user, only: [:edit, :update]
 before_filter :admin_user, only: :destroy
 
+  #force_ssl
+
   def show
    @user = User.find(params[:id])
   end
@@ -23,9 +25,14 @@ before_filter :admin_user, only: :destroy
  end
 
   def destroy
-   User.find(params[:id]).destroy
-   flash[:success] = "User destroyed."
-   redirect_to users_path
+    @user = User.find(params[:id])
+    if current_user?(@user)
+      redirect_to users_path, notice: "You can't destroy yourself."
+    else
+      @user.destroy
+      flash[:success] = "User destroyed."
+      redirect_to users_path
+    end
   end
 
   def index
@@ -45,14 +52,12 @@ before_filter :admin_user, only: :destroy
   end
  end
 
- private
+  def show
+   @user = User.find(params[:id])
+   @microposts = @user.microposts.paginate(page: params[:page])
+   end
 
-  def signed_in_user
-   unless signed_in?
-    store_location
-    redirect_to signin_path, notice: "Please sign in."
-  end
- end
+ private
 
   def correct_user
    @user = User.find(params[:id])
